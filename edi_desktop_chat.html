@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EDI Desktop Chat</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #18181b; color: #f3f3f3; margin: 0; }
+    .container { max-width: 500px; margin: 40px auto; background: #23232a; border-radius: 10px; box-shadow: 0 2px 8px #0006; padding: 24px; }
+    h1 { text-align: center; margin-bottom: 16px; }
+    #chat { height: 320px; overflow-y: auto; background: #18181b; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+    .msg { margin-bottom: 12px; }
+    .user { color: #38bdf8; }
+    .edi { color: #a3e635; }
+    form { display: flex; gap: 8px; }
+    input[type=text] { flex: 1; padding: 8px; border-radius: 6px; border: none; background: #2d2d36; color: #f3f3f3; }
+    button { padding: 8px 16px; border-radius: 6px; border: none; background: #38bdf8; color: #18181b; font-weight: bold; cursor: pointer; }
+    button:hover { background: #0ea5e9; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>EDI Desktop Chat</h1>
+    <div id="chat"></div>
+    <form id="chatForm">
+      <input type="text" id="prompt" placeholder="Type your message..." autocomplete="off" required />
+      <button type="submit">Send</button>
+    </form>
+  </div>
+  <script>
+    const chat = document.getElementById('chat');
+    const form = document.getElementById('chatForm');
+    const promptInput = document.getElementById('prompt');
+
+    function addMsg(sender, text) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + sender;
+      div.innerHTML = `<strong class="${sender}">${sender === 'user' ? 'You' : 'EDI'}:</strong> ${text}`;
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    form.onsubmit = async (e) => {
+      e.preventDefault();
+      const prompt = promptInput.value.trim();
+      if (!prompt) return;
+      addMsg('user', prompt);
+      promptInput.value = '';
+      addMsg('edi', '<em>Thinking...</em>');
+      try {
+        const res = await fetch('/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        chat.lastChild.innerHTML = `<strong class="edi">EDI:</strong> ${data.response}`;
+      } catch {
+        chat.lastChild.innerHTML = `<strong class="edi">EDI:</strong> <span style='color:#f87171'>Error: Could not connect to EDI server.</span>`;
+      }
+    };
+  </script>
+</body>
+</html>
